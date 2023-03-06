@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="DumpingWaresConfiguration" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="E:\Modding\xsds\comb\md.xsd">
+  <cues>
+    <library name="DumpingWaresConfig">
+      <actions>
+        <!--
+        ##############################
+        #### Dumping Wares Config ####
+        
+        Change to true if you want trade offers logged on Logbook
+        -->
+        <set_value name="$logOffers" exact="true"/>
+
+
+        <!--
+        ######### Config end #########
+        ##############################-->
+
+      </actions>
+    </library>
+  </cues>
+</mdscript>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<mdscript name="Dumping_Wares" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+	<cues>
+		<cue name="DumpingWaresCue" instantiate="true" checkinterval="20min" checktime="player.age + 10s">			
+			<cues>				
+				<cue name="DumpingWaresLoopUniverse">
+					<actions>
+						<set_value name="$logOffers" exact="false"/>
+						<debug_text text="'Dumpwares - default config value:' + $logOffers"/>
+						<do_if value="@md.DumpingWaresConfiguration.DumpingWaresConfig.exists">
+							<include_actions ref="md.DumpingWaresConfiguration.DumpingWaresConfig"/>
+							<debug_text text="'Dumpwares - new config value:' + $logOffers"/>
+						</do_if>
+						<find_station name="$Stations" multiple="true" space="player.galaxy" functional="true">
+							<match_any>
+								<!--Target trading stations-->
+								<match macro="macro.station_arg_tradestation_base_01_macro"/>
+								<match macro="macro.station_par_tradestation_base_01_macro"/>
+								<match macro="macro.station_tel_tradestation_base_01_macro"/>
+								<match macro="macro.landmarks_tel_tradestation_01_macro"/>
+								<match macro="macro.landmarks_par_tradestation_01_macro"/>
+								<match macro="macro.station_spl_tradestation_base_01_macro"/>
+								<match macro="macro.station_ter_tradestation_base_01_macro"/>	
+								<!--Target Pirate bases-->
+								<match macro="macro.station_gen_piratebase_base_01_macro"/>
+								<!--Target shipbuilding stations-->
+								<match_content class="class.buildmodule" />								
+							</match_any>
+							<!-- Not player owned -->
+							<match owner="faction.player" negate="true"/>
+							<match owner="faction.xenon" negate="true"/>
+							<match owner="faction.khaak" negate="true"/>
+						</find_station>
+						<do_all exact="$Stations.count" counter="$i">
+							<set_value name="$Station" exact="$Stations.{$i}"/>
+							<include_actions ref="DumpWares"/>						
+						</do_all>
+						<remove_value name="$Stations"/>
+						<remove_value name="$Station"/>
+					</actions>
+				</cue>
+
+				<library name="DumpWares">
+					<actions>
+						<do_if value="$Station.exists">
+							<set_value name="$_SingleLog_1" exact="0" />		
+							<set_value name="$needwares" exact="0" />
+							<set_value name="$notificationlist" exact="''"/>
+							<do_all exact="$Station.cargo.list.count" counter="$j">
+								<set_value name="$ware" exact="$Station.cargo.list.{$j}"/>
+								<set_value name="$waresAmount" exact="$Station.cargo.{$ware}.count" />
+								<set_value name="$maxWaresAmount" exact="$Station.cargo.{$ware}.target" />								
+								<set_value name="$removeWaresAmount" exact="0" />
+								
+								<do_if value="$waresAmount lt $maxWaresAmount * 0.10">
+									<set_value name="$needwares" operation="add" exact="1"/>
+									<set_value name="$price" exact="$Station.buyprice.{$ware}"/>		
+									<set_value name="$buyoffer" exact="($maxWaresAmount-$waresAmount)"/>
+									<set_value name="$money" exact="($buyoffer*$price)"/> 									
+									<set_value name="$notificationlist" operation="add" exact="'\033W\n - ' + $ware+' (\033R'+$buyoffer+'\033W at \033G$'+$price.formatted.{'%6cs %Cr'}+'\033W. Total income: \033G$'+$money.formatted.{'%6cs %Cr'}+'\033W)'"/>
+								</do_if>
+								<do_else>
+									<do_if value="$ware == ware.nividium">
+										<!-- Cut 50% of Nividium if 50% of total cargo space is used -->
+										<do_if value="$waresAmount gt $maxWaresAmount * 0.50">
+											<set_value name="$removeWaresAmount" exact="($waresAmount * 0.5)i"/>
+										</do_if>
+									</do_if>
+									<do_else>
+										<!-- Cut ware down to 75% of total cargo space is available for this ware -->
+										<do_if value="$waresAmount gt $maxWaresAmount * 0.75">
+											<set_value name="$removeWaresAmount" exact="($waresAmount - ($maxWaresAmount * 0.75))i"/>
+										</do_if>
+									</do_else>
+
+									<do_if value="$removeWaresAmount gt 0">
+										<remove_cargo object="$Station" ware="$ware" exact="$removeWaresAmount"/>
+									</do_if>
+								</do_else>								
+							</do_all>
+							
+							<do_if value="$logOffers and $needwares gt 0">														
+								<set_value name="$textHeader" exact="'\033G %1 - Station Broadcast'.[$Station.knownname]"/>
+								<set_value name="$convertedString" exact="'We urgently need supplies of the following wares:'+$notificationlist"/>
+								<!--
+								<show_notification text="$Station.knownname+' request urgent supplies (' + $needwares + ' wares)'" timeout="5s"/>
+								-->
+								<write_to_logbook title="$textHeader" text="$convertedString" interaction="showonmap" object="$Station" category="tips"/>
+							</do_if>
+							<remove_value name="$ware"/>
+							<remove_value name="$notificationlist"/>
+							<remove_value name="$buyoffer"/>
+							<remove_value name="$price"/>
+							<remove_value name="$money"/>
+							<remove_value name="$needwares"/>
+							<remove_value name="$waresAmount"/>
+							<remove_value name="$maxWaresAmount"/>
+							<remove_value name="$removeWaresAmount"/>
+						</do_if>
+					</actions>
+				</library>
+			</cues>
+		</cue>
+	</cues>
+</mdscript>
